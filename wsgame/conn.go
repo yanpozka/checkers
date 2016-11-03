@@ -21,7 +21,7 @@ var upgrader = websocket.Upgrader{
 }
 
 //
-type Client struct {
+type client struct {
 	conn *websocket.Conn // The websocket connection.
 	send chan []byte     // channel of outbound messages.
 }
@@ -31,7 +31,7 @@ type Client struct {
 // The application runs readPump in a per-connection goroutine. The application
 // ensures that there is at most one reader on a connection by executing all
 // reads from this goroutine.
-func (c *Client) readPump() {
+func (c *client) read() {
 	defer c.conn.Close()
 
 	c.conn.SetReadLimit(maxMessageSize)
@@ -41,13 +41,12 @@ func (c *Client) readPump() {
 	for {
 		_, message, err := c.conn.ReadMessage()
 		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway) {
-				log.Printf("Unexpected Close: %v", err)
+			if !websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway) {
+				log.Printf("Error Reading: %v", err)
 			}
+			// connection close, maybe a hook here
 			break
 		}
-
-		log.Printf("Resending message: %q\n", string(message))
 
 		c.send <- message
 	}
@@ -58,7 +57,7 @@ func (c *Client) readPump() {
 // A goroutine running writePump is started for each connection. The
 // application ensures that there is at most one writer to a connection by
 // executing all writes from this goroutine.
-func (c *Client) writePump() {
+func (c *client) write() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()
@@ -68,24 +67,18 @@ func (c *Client) writePump() {
 	for {
 		select {
 		case message := <-c.send:
+			log.Printf("Resending message: %q\n", string(message))
+
 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 
-			w, err := c.conn.NextWriter(websocket.TextMessage)
-			if err != nil {
-				return
+			if err := c.conn.WriteMessage(websocket.BinaryMessage, message); err != nil {
+				log.Println("Error Write Message", err)
 			}
 
-			if _, err := w.Write(message); err != nil {
-				log.Println("Error trying to write, error:", err)
-			}
-
-			if err := w.Close(); err != nil {
-				return
-			}
 		case <-ticker.C:
 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := c.conn.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
-				return
+				log.Println("Error Ping Message", err)
 			}
 		}
 	}
@@ -100,8 +93,8 @@ func gameWS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := Client{conn: conn}
+	c := client{conn: conn, send: make(chan []byte, 1)}
 
-	go client.writePump()
-	client.readPump()
+	go c.write()
+	c.read()
 }

@@ -1,1 +1,9 @@
-Just another checker game online. This time using Go(golang.org) with gorilla/websocket, httprouter and Nats as message system.
+### Just another checker game online. This time using Go(golang.org) with gorilla/websocket, httprouter and Nats as message system.
+
+
+#### Generate flatbuffers:
+
+```bash
+cd fbs
+flatc -o ../ -g message.fbs
+```

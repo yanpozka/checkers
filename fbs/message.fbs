@@ -1,0 +1,12 @@
+namespace messages;
+
+table Row {
+	Row: [byte];
+}
+
+table Game {
+	Board: [Row];
+	NextPlayer: byte;
+}
+
+root_type Game;

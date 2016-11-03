@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	defaultLogFile    = "/tmp/lserver.log"
+	defaultLogFile    = "/tmp/wsserver.log"
 	defaultListenPort = ":8080"
 )
 
@@ -24,7 +24,7 @@ func main() {
 	}
 
 	lp := getOrDefault("LISTEN_PORT", defaultListenPort)
-	log.Println("Starting listening in " + lp)
+	log.Println("Start listening in " + lp)
 
 	err := http.ListenAndServe(lp, createServer())
 	if err != nil {

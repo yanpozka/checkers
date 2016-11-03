@@ -6,7 +6,6 @@ import (
 	"time"
 )
 
-//
 func loggerMW(inner http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
@@ -19,7 +18,6 @@ func loggerMW(inner http.Handler) http.Handler {
 	})
 }
 
-//
 func commonHeadersMW(inner http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
@@ -33,7 +31,3 @@ func commonHeadersMW(inner http.Handler) http.Handler {
 		inner.ServeHTTP(w, req) // !!
 	})
 }
-
-//
-
-//
