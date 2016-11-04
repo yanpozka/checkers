@@ -7,7 +7,14 @@ import (
 )
 
 type Move struct {
-	_tab flatbuffers.Struct
+	_tab flatbuffers.Table
+}
+
+func GetRootAsMove(buf []byte, offset flatbuffers.UOffsetT) *Move {
+	n := flatbuffers.GetUOffsetT(buf[offset:])
+	x := &Move{}
+	x.Init(buf, n+offset)
+	return x
 }
 
 func (rcv *Move) Init(buf []byte, i flatbuffers.UOffsetT) {
@@ -15,23 +22,36 @@ func (rcv *Move) Init(buf []byte, i flatbuffers.UOffsetT) {
 	rcv._tab.Pos = i
 }
 
-func (rcv *Move) R() int8 {
-	return rcv._tab.GetInt8(rcv._tab.Pos + flatbuffers.UOffsetT(0))
-}
-func (rcv *Move) MutateR(n int8) bool {
-	return rcv._tab.MutateInt8(rcv._tab.Pos+flatbuffers.UOffsetT(0), n)
+func (rcv *Move) Position(obj *Coord) *Coord {
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(4))
+	if o != 0 {
+		x := o + rcv._tab.Pos
+		if obj == nil {
+			obj = new(Coord)
+		}
+		obj.Init(rcv._tab.Bytes, x)
+		return obj
+	}
+	return nil
 }
 
-func (rcv *Move) C() int8 {
-	return rcv._tab.GetInt8(rcv._tab.Pos + flatbuffers.UOffsetT(1))
-}
-func (rcv *Move) MutateC(n int8) bool {
-	return rcv._tab.MutateInt8(rcv._tab.Pos+flatbuffers.UOffsetT(1), n)
+func (rcv *Move) Player() []byte {
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(6))
+	if o != 0 {
+		return rcv._tab.ByteVector(o + rcv._tab.Pos)
+	}
+	return nil
 }
 
-func CreateMove(builder *flatbuffers.Builder, R int8, C int8) flatbuffers.UOffsetT {
-	builder.Prep(1, 2)
-	builder.PrependInt8(C)
-	builder.PrependInt8(R)
-	return builder.Offset()
+func MoveStart(builder *flatbuffers.Builder) {
+	builder.StartObject(2)
+}
+func MoveAddPosition(builder *flatbuffers.Builder, Position flatbuffers.UOffsetT) {
+	builder.PrependStructSlot(0, flatbuffers.UOffsetT(Position), 0)
+}
+func MoveAddPlayer(builder *flatbuffers.Builder, Player flatbuffers.UOffsetT) {
+	builder.PrependUOffsetTSlot(1, flatbuffers.UOffsetT(Player), 0)
+}
+func MoveEnd(builder *flatbuffers.Builder) flatbuffers.UOffsetT {
+	return builder.EndObject()
 }

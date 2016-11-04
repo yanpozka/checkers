@@ -25,7 +25,7 @@ func TestHealthOK(t *testing.T) {
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
-		t.Fatalf("Expected : %q we got: %q", http.StatusText(http.StatusOK), http.StatusText(res.StatusCode))
+		t.Fatalf("Expected: %q we got: %q", http.StatusText(http.StatusOK), http.StatusText(res.StatusCode))
 	}
 
 	dec := json.NewDecoder(res.Body)

@@ -6,10 +6,18 @@ table Row {
 
 table Game {
 	Board: [Row];
-	NextPlayer: byte;
+	NextPlayer: string;
+	PlayerA: string;
+	PlayerB: string;
+	Status: byte;
 }
 
-struct Move {
+table Move {
+	Position: Coord;
+	Player: string;
+}
+
+struct Coord {
 	R: byte;
 	C: byte;
 }

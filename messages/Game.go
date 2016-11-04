@@ -42,20 +42,44 @@ func (rcv *Game) BoardLength() int {
 	return 0
 }
 
-func (rcv *Game) NextPlayer() int8 {
+func (rcv *Game) NextPlayer() []byte {
 	o := flatbuffers.UOffsetT(rcv._tab.Offset(6))
+	if o != 0 {
+		return rcv._tab.ByteVector(o + rcv._tab.Pos)
+	}
+	return nil
+}
+
+func (rcv *Game) PlayerA() []byte {
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(8))
+	if o != 0 {
+		return rcv._tab.ByteVector(o + rcv._tab.Pos)
+	}
+	return nil
+}
+
+func (rcv *Game) PlayerB() []byte {
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(10))
+	if o != 0 {
+		return rcv._tab.ByteVector(o + rcv._tab.Pos)
+	}
+	return nil
+}
+
+func (rcv *Game) Status() int8 {
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(12))
 	if o != 0 {
 		return rcv._tab.GetInt8(o + rcv._tab.Pos)
 	}
 	return 0
 }
 
-func (rcv *Game) MutateNextPlayer(n int8) bool {
-	return rcv._tab.MutateInt8Slot(6, n)
+func (rcv *Game) MutateStatus(n int8) bool {
+	return rcv._tab.MutateInt8Slot(12, n)
 }
 
 func GameStart(builder *flatbuffers.Builder) {
-	builder.StartObject(2)
+	builder.StartObject(5)
 }
 func GameAddBoard(builder *flatbuffers.Builder, Board flatbuffers.UOffsetT) {
 	builder.PrependUOffsetTSlot(0, flatbuffers.UOffsetT(Board), 0)
@@ -63,8 +87,17 @@ func GameAddBoard(builder *flatbuffers.Builder, Board flatbuffers.UOffsetT) {
 func GameStartBoardVector(builder *flatbuffers.Builder, numElems int) flatbuffers.UOffsetT {
 	return builder.StartVector(4, numElems, 4)
 }
-func GameAddNextPlayer(builder *flatbuffers.Builder, NextPlayer int8) {
-	builder.PrependInt8Slot(1, NextPlayer, 0)
+func GameAddNextPlayer(builder *flatbuffers.Builder, NextPlayer flatbuffers.UOffsetT) {
+	builder.PrependUOffsetTSlot(1, flatbuffers.UOffsetT(NextPlayer), 0)
+}
+func GameAddPlayerA(builder *flatbuffers.Builder, PlayerA flatbuffers.UOffsetT) {
+	builder.PrependUOffsetTSlot(2, flatbuffers.UOffsetT(PlayerA), 0)
+}
+func GameAddPlayerB(builder *flatbuffers.Builder, PlayerB flatbuffers.UOffsetT) {
+	builder.PrependUOffsetTSlot(3, flatbuffers.UOffsetT(PlayerB), 0)
+}
+func GameAddStatus(builder *flatbuffers.Builder, Status int8) {
+	builder.PrependInt8Slot(4, Status, 0)
 }
 func GameEnd(builder *flatbuffers.Builder) flatbuffers.UOffsetT {
 	return builder.EndObject()

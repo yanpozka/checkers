@@ -27,8 +27,6 @@ func main() {
 		log.SetOutput(io.MultiWriter(f, os.Stdout))
 	}
 
-	memhost := getOrDefault("MEMCACHE_PORT", defaultMemcacheHost) // TODO: it can be a list of hosts separated by comma
-
 	lp := getOrDefault("LISTEN_PORT", defaultListenPort)
 	log.Println("Starting listening in " + lp)
 
