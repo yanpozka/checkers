@@ -9,4 +9,9 @@ table Game {
 	NextPlayer: byte;
 }
 
+struct Move {
+	R: byte;
+	C: byte;
+}
+
 root_type Game;

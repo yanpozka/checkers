@@ -12,8 +12,9 @@ import (
 )
 
 const (
-	defaultLogFile    = "/tmp/apiserver.log"
-	defaultListenPort = ":9090"
+	defaultLogFile      = "/tmp/apiserver.log"
+	defaultListenPort   = ":9090"
+	defaultMemcacheHost = "127.0.0.1:11211"
 )
 
 func main() {
@@ -26,39 +27,40 @@ func main() {
 		log.SetOutput(io.MultiWriter(f, os.Stdout))
 	}
 
-	router := httprouter.New()
-	{
-		// panic recover
-		router.PanicHandler = func(w http.ResponseWriter, r *http.Request, v interface{}) {
-			log.Printf("Recovering: %+v\nrequest: %+v", v, r)
-			debug.PrintStack()
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		}
-
-		// not found handler
-		router.NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			log.Printf("Detected Not Found '%s' %+v", r.RequestURI, *r)
-			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-		})
-
-		commonh := alice.New(commonHeadersMW, loggerMW)
-
-		router.Handler(http.MethodGet, "/health", commonh.ThenFunc(health))
-	}
+	memhost := getOrDefault("MEMCACHE_PORT", defaultMemcacheHost) // TODO: it can be a list of hosts separated by comma
 
 	lp := getOrDefault("LISTEN_PORT", defaultListenPort)
 	log.Println("Starting listening in " + lp)
 
-	err := http.ListenAndServe(lp, router)
+	err := http.ListenAndServe(lp, createRouter())
 	if err != nil {
 		log.Fatal("Error ListenAndServe: ", err)
 	}
 }
 
-func health(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.Write([]byte("ok"))
+func createRouter() http.Handler {
+	router := httprouter.New()
+
+	// panic recover
+	router.PanicHandler = func(w http.ResponseWriter, r *http.Request, v interface{}) {
+		log.Printf("Recovering: %+v\nrequest: %+v", v, r)
+		debug.PrintStack()
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+
+	// not found handler
+	router.NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("Detected Not Found: %q %+v", r.RequestURI, *r)
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+	})
+
+	commonh := alice.New(loggerMW, commonMW)
+
+	// routers:
+	router.Handler(http.MethodGet, "/health", commonh.ThenFunc(health))
+	router.Handler(http.MethodPost, "/game", commonh.ThenFunc(createGame))
+
+	return router
 }
 
 func getOrDefault(varName, defaultVal string) string {

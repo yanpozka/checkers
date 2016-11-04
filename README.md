@@ -1,4 +1,4 @@
-### Just another checker game online. This time using Go(golang.org) with gorilla/websocket, httprouter and Nats as message system.
+High Availability checkers. Other game online, this time using Go(golang.org) with gorilla/websocket, httprouter, memcache and Nats as message system.
 
 
 #### Generate flatbuffers:

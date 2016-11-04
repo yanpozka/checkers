@@ -4,21 +4,22 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/bradfitz/gomemcache/memcache"
 )
 
 func loggerMW(inner http.Handler) http.Handler {
 
-	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		ruri := req.URL.String()
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
-		inner.ServeHTTP(w, req) // !!
+		inner.ServeHTTP(w, req)
 
-		log.Printf("%s: [ %s ] Time consumed: %s", req.Method, ruri, time.Since(start))
+		log.Printf("%s: %q Time consumed: %s", r.Method, r.URL, r.RemoteAddr, time.Since(start))
 	})
 }
 
-func commonHeadersMW(inner http.Handler) http.Handler {
+func commonMW(inner http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		header := w.Header()
@@ -28,6 +29,6 @@ func commonHeadersMW(inner http.Handler) http.Handler {
 		// default application/json for api responses for now
 		header.Set("Content-Type", "application/json")
 
-		inner.ServeHTTP(w, req) // !!
+		inner.ServeHTTP(w, req)
 	})
 }
