@@ -17,6 +17,18 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
+func TestCreateGame(t *testing.T) {
+	res, err := http.Post(tserver.URL+"/game", "application/json", nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusCreated {
+		t.Fatalf("Expected: %q we got: %q", http.StatusText(http.StatusCreated), http.StatusText(res.StatusCode))
+	}
+}
+
 func TestHealthOK(t *testing.T) {
 	res, err := http.Get(tserver.URL + "/health")
 	if err != nil {

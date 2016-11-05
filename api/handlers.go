@@ -8,6 +8,12 @@ import (
 	"github.com/yanpozka/checkers/store"
 )
 
+const (
+	Empty byte = iota
+	PlayerUp
+	PlayerDown
+)
+
 func createGame(w http.ResponseWriter, r *http.Request) {
 	ms, isStoreType := r.Context().Value(storeCtxKey).(store.Store)
 	if !isStoreType {
