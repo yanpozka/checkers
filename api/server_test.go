@@ -18,29 +18,41 @@ func TestMain(m *testing.M) {
 }
 
 func TestCreateGame(t *testing.T) {
-	res, err := http.Post(tserver.URL+"/game", "application/json", nil)
+	r, err := http.Post(tserver.URL+"/game", "application/json", nil)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer res.Body.Close()
+	defer r.Body.Close()
 
-	if res.StatusCode != http.StatusCreated {
-		t.Fatalf("Expected: %q we got: %q", http.StatusText(http.StatusCreated), http.StatusText(res.StatusCode))
+	if r.StatusCode != http.StatusCreated {
+		t.Fatalf("Expected: %q we got: %q", http.StatusText(http.StatusCreated), http.StatusText(r.StatusCode))
+	}
+
+	mr := map[string]string{}
+
+	if err := json.NewDecoder(r.Body).Decode(&mr); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, field := range []string{"playerID", "gameURL"} {
+		if v, contains := mr[field]; !contains || v == "" {
+			t.Fatal("Not found field:" + field)
+		}
 	}
 }
 
 func TestHealthOK(t *testing.T) {
-	res, err := http.Get(tserver.URL + "/health")
+	r, err := http.Get(tserver.URL + "/health")
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer res.Body.Close()
+	defer r.Body.Close()
 
-	if res.StatusCode != http.StatusOK {
-		t.Fatalf("Expected: %q we got: %q", http.StatusText(http.StatusOK), http.StatusText(res.StatusCode))
+	if r.StatusCode != http.StatusOK {
+		t.Fatalf("Expected: %q we got: %q", http.StatusText(http.StatusOK), http.StatusText(r.StatusCode))
 	}
 
-	dec := json.NewDecoder(res.Body)
+	dec := json.NewDecoder(r.Body)
 	var status bool
 
 	if err := dec.Decode(&status); err != nil {

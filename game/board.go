@@ -12,45 +12,98 @@ const (
 )
 
 const (
-	PlayerUp   byte = 1
-	PlayerDown      = 2
+	PlayerA int8 = 1
+	PlayerB      = 2
 )
 
-func InitGame(authorID string) []byte {
-	b := flatbuffers.NewBuilder(0)
+var gameBuilder = flatbuffers.NewBuilder(0)
 
-	pAPosition := b.CreateString(authorID)
+func InitGame(playerID []byte) []byte {
+	gameBuilder.Reset()
 
-	m.GameStart(b)
-	m.GameAddPlayerA(b, pAPosition)
-	m.GameAddNextPlayer(b, pAPosition)
-	m.GameAddStatus(b, StatusWaitingOpponent)
+	pAPosition := gameBuilder.CreateByteString(playerID)
 
-	gamePosition := m.GameEnd(b)
+	m.GameStart(gameBuilder)
+	m.GameAddPlayerA(gameBuilder, pAPosition)
+	m.GameAddNextPlayer(gameBuilder, pAPosition)
+	m.GameAddStatus(gameBuilder, StatusWaitingOpponent)
 
-	b.Finish(gamePosition)
+	gamePosition := m.GameEnd(gameBuilder)
 
-	return b.Bytes[b.Head():]
+	gameBuilder.Finish(gamePosition)
+
+	return gameBuilder.Bytes[gameBuilder.Head():]
 }
 
-func MakeGame() []byte {
-	// TODO: everything
-	return nil
+func MakeGame(playerID []byte, board [8][8]int8) []byte {
+	gameBuilder.Reset()
+
+	pAPosition := gameBuilder.CreateByteString(playerID)
+
+	var boardPosition flatbuffers.UOffsetT
+	{
+		var rows [8]flatbuffers.UOffsetT
+
+		for rx, countRows := 7, 0; rx >= 0; rx-- { // start allocation from the last cell
+
+			m.RowStartCellsVector(gameBuilder, 8)
+			for cx := 7; cx >= 0; cx-- {
+				gameBuilder.PlaceInt8(board[rx][cx])
+			}
+			cellsPosition := gameBuilder.EndVector(8)
+
+			m.RowStart(gameBuilder)
+			m.RowAddCells(gameBuilder, cellsPosition)
+			rowPosition := m.RowEnd(gameBuilder)
+
+			rows[countRows] = rowPosition
+			countRows++
+		}
+
+		m.GameStartBoardVector(gameBuilder, 8)
+		for _, rowPosition := range rows {
+			gameBuilder.PrependUOffsetT(rowPosition)
+		}
+		boardPosition = gameBuilder.EndVector(8)
+	}
+
+	m.GameStart(gameBuilder)
+	m.GameAddBoard(gameBuilder, boardPosition)
+	m.GameAddPlayerA(gameBuilder, pAPosition)
+	m.GameAddNextPlayer(gameBuilder, pAPosition)
+	m.GameAddStatus(gameBuilder, StatusPlaying)
+
+	gamePosition := m.GameEnd(gameBuilder)
+
+	gameBuilder.Finish(gamePosition)
+
+	return gameBuilder.Bytes[gameBuilder.Head():]
 }
 
-func ReadGame(buf []byte) (string, string, int8) {
+func ReadGame(buf []byte) ([]byte, []byte, [8][8]int8, int8) {
 	game := m.GetRootAsGame(buf, 0)
 
-	return string(game.PlayerA()), string(game.NextPlayer()), game.Status()
+	var arr [8][8]int8
+
+	for rx, rlen := 0, game.BoardLength(); rx < rlen; rx++ {
+		var rowObj m.Row
+		game.Board(&rowObj, rx)
+
+		for cx, clen := 0, rowObj.CellsLength(); cx < clen; cx++ {
+			arr[rx][cx] = rowObj.Cells(cx)
+		}
+	}
+
+	return game.PlayerA(), game.NextPlayer(), arr, game.Status()
 }
 
-var firstBoard = [8][8]byte{
-	{0, PlayerUp, 0, PlayerUp, 0, PlayerUp, 0, PlayerUp},
-	{PlayerUp, 0, PlayerUp, 0, PlayerUp, 0, PlayerUp, 0},
-	{0, PlayerUp, 0, PlayerUp, 0, PlayerUp, 0, PlayerUp},
+var firstBoard = [8][8]int8{
+	{0, PlayerA, 0, PlayerA, 0, PlayerA, 0, PlayerA},
+	{PlayerA, 0, PlayerA, 0, PlayerA, 0, PlayerA, 0},
+	{0, PlayerA, 0, PlayerA, 0, PlayerA, 0, PlayerA},
 	{0, 0, 0, 0, 0, 0, 0, 0},
 	{0, 0, 0, 0, 0, 0, 0, 0},
-	{PlayerDown, 0, PlayerDown, 0, PlayerDown, 0, PlayerDown, 0},
-	{0, PlayerDown, 0, PlayerDown, 0, PlayerDown, 0, PlayerDown},
-	{PlayerDown, 0, PlayerDown, 0, PlayerDown, 0, PlayerDown, 0},
+	{PlayerB, 0, PlayerB, 0, PlayerB, 0, PlayerB, 0},
+	{0, PlayerB, 0, PlayerB, 0, PlayerB, 0, PlayerB},
+	{PlayerB, 0, PlayerB, 0, PlayerB, 0, PlayerB, 0},
 }

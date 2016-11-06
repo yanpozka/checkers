@@ -22,7 +22,7 @@ func (rcv *Row) Init(buf []byte, i flatbuffers.UOffsetT) {
 	rcv._tab.Pos = i
 }
 
-func (rcv *Row) Row(j int) int8 {
+func (rcv *Row) Cells(j int) int8 {
 	o := flatbuffers.UOffsetT(rcv._tab.Offset(4))
 	if o != 0 {
 		a := rcv._tab.Vector(o)
@@ -31,7 +31,7 @@ func (rcv *Row) Row(j int) int8 {
 	return 0
 }
 
-func (rcv *Row) RowLength() int {
+func (rcv *Row) CellsLength() int {
 	o := flatbuffers.UOffsetT(rcv._tab.Offset(4))
 	if o != 0 {
 		return rcv._tab.VectorLen(o)
@@ -42,10 +42,10 @@ func (rcv *Row) RowLength() int {
 func RowStart(builder *flatbuffers.Builder) {
 	builder.StartObject(1)
 }
-func RowAddRow(builder *flatbuffers.Builder, Row flatbuffers.UOffsetT) {
-	builder.PrependUOffsetTSlot(0, flatbuffers.UOffsetT(Row), 0)
+func RowAddCells(builder *flatbuffers.Builder, Cells flatbuffers.UOffsetT) {
+	builder.PrependUOffsetTSlot(0, flatbuffers.UOffsetT(Cells), 0)
 }
-func RowStartRowVector(builder *flatbuffers.Builder, numElems int) flatbuffers.UOffsetT {
+func RowStartCellsVector(builder *flatbuffers.Builder, numElems int) flatbuffers.UOffsetT {
 	return builder.StartVector(1, numElems, 1)
 }
 func RowEnd(builder *flatbuffers.Builder) flatbuffers.UOffsetT {

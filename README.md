@@ -4,5 +4,5 @@ High Availability checkers. Other game online, this time using Go(golang.org) wi
 #### Generate flatbuffers:
 
 ```bash
-cd fbs && flatc -o ../ -g message.fbs
+cd game/fbs && flatc -o ../ -g message.fbs
 ```
