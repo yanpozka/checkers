@@ -32,8 +32,9 @@ func main() {
 	}
 }
 
-func createServer() http.Handler {
-	s := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func middleware(inner http.HandlerFunc) http.Handler {
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		defer func() {
 			if val := recover(); val != nil {
@@ -43,21 +44,24 @@ func createServer() http.Handler {
 			}
 		}()
 
+		log.Printf("Request %s %q Remote IP: %q", r.Method, r.URL, r.RemoteAddr)
+
 		if r.Method != http.MethodGet {
-			log.Println(http.StatusText(http.StatusMethodNotAllowed))
 			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 			return
 		}
 
-		log.Printf("Request %s %q remote IP: %q", r.Method, r.URL, r.RemoteAddr)
-
-		gameWS(w, r)
+		inner(w, r)
 	})
+}
+
+func createServer() http.Handler {
+	mux := http.NewServeMux()
 
 	// route
-	http.Handle("/game", s)
+	mux.Handle("/game/", middleware(gameWS))
 
-	return s
+	return mux
 }
 
 func getOrDefault(varName, defaultVal string) string {

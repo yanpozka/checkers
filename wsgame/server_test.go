@@ -16,12 +16,12 @@ var tserver *httptest.Server
 func TestServerOK(t *testing.T) {
 	tserver = httptest.NewServer(createServer())
 
-	u := url.URL{Scheme: "ws", Host: getHost(tserver.URL), Path: "/game"}
+	u := url.URL{Scheme: "ws", Host: getHost(tserver.URL), Path: "/game/123"}
 	t.Logf("Connecting to %q", u.String())
 
-	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	c, res, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
-		t.Fatal("Error on dial:", err)
+		t.Fatal("Error on dial:", err, "Status:", res.Status)
 	}
 	defer c.Close()
 
