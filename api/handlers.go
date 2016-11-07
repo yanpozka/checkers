@@ -20,8 +20,6 @@ func createGame(w http.ResponseWriter, r *http.Request) {
 	ms, isStoreType := r.Context().Value(storeCtxKey).(store.Store)
 	if !isStoreType {
 		log.Fatal("This's very fatal, Context doesn't have storeCtxKey :(")
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
 	}
 
 	playerID := "player-" + uuid.NewV4().String()

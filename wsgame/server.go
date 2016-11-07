@@ -13,6 +13,9 @@ const (
 	defaultListenPort = ":8080"
 )
 
+//
+var hub = newHub()
+
 func main() {
 	{
 		f, err := os.OpenFile(getOrDefault("LOG_FILE", defaultLogFile), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
@@ -60,6 +63,8 @@ func createServer() http.Handler {
 
 	// route
 	mux.Handle("/game/", middleware(gameWS))
+
+	go hub.run()
 
 	return mux
 }

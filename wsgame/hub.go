@@ -1,26 +1,26 @@
 package main
 
-type hub struct {
+type HubClients struct {
 	clients    *containerClient
 	register   chan *client // Register requests from the clients.
 	unregister chan *client // Unregister requests from clients.
 }
 
-func newHub() *hub {
-	return &hub{
+func newHub() *HubClients {
+	return &HubClients{
 		register:   make(chan *client, 1),
 		unregister: make(chan *client, 1),
 		clients:    newContainerClient(),
 	}
 }
 
-func (h *hub) run() {
+func (h *HubClients) run() {
 	for {
 		select {
-		case c := <-h.register:
-			h.clients.add(c)
-		case c := <-h.unregister:
-			h.clients.remove(c)
+		case <-h.register:
+			// h.clients.add(c)
+		case <-h.unregister:
+			// h.clients.remove(c)
 		}
 	}
 }

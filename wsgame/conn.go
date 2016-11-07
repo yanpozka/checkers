@@ -9,16 +9,13 @@ import (
 )
 
 const (
-	writeWait      = 10 * time.Second    // Time allowed to write a message to the peer.
+	writeWait      = 5 * time.Second     // Time allowed to write a message to the peer.
 	pongWait       = 60 * time.Second    // Time allowed to read the next pong message from the peer.
 	pingPeriod     = (pongWait * 9) / 10 // Send pings to peer with this period. Must be less than pongWait.
 	maxMessageSize = 2048                // Maximum message size allowed from peer.
 )
 
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  4096, // 4K
-	WriteBufferSize: 4096, // 4K
-}
+var upgrader = websocket.Upgrader{} // default ReadBufferSize, WriteBufferSize 4K
 
 //
 type client struct {
@@ -26,13 +23,11 @@ type client struct {
 	send chan []byte     // channel of outbound messages.
 }
 
-// readPump pumps messages from the websocket connection to the hub.
 //
-// The application runs readPump in a per-connection goroutine. The application
-// ensures that there is at most one reader on a connection by executing all
-// reads from this goroutine.
 func (c *client) read() {
-	defer c.conn.Close()
+	defer func() {
+		c.conn.Close()
+	}()
 
 	c.conn.SetReadLimit(maxMessageSize)
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
@@ -44,7 +39,6 @@ func (c *client) read() {
 			if !websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway) {
 				log.Printf("Error Reading: %v", err)
 			}
-			// connection close, maybe a hook here
 			break
 		}
 
@@ -52,11 +46,7 @@ func (c *client) read() {
 	}
 }
 
-// writePump pumps messages from the hub to the websocket connection.
 //
-// A goroutine running writePump is started for each connection. The
-// application ensures that there is at most one writer to a connection by
-// executing all writes from this goroutine.
 func (c *client) write() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
