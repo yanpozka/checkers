@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -19,8 +20,10 @@ var upgrader = websocket.Upgrader{} // default ReadBufferSize, WriteBufferSize 4
 
 //
 type client struct {
-	conn *websocket.Conn // The websocket connection.
-	send chan []byte     // channel of outbound messages.
+	conn     *websocket.Conn // The websocket connection.
+	send     chan []byte     // channel of outbound messages.
+	gameID   string
+	playerID string
 }
 
 //
@@ -76,6 +79,18 @@ func (c *client) write() {
 
 // serveWs handles websocket requests from the peer.
 func gameWS(w http.ResponseWriter, r *http.Request) {
+	parts := strings.Split(r.URL.Path, "/")
+	gameID := parts[len(parts)-1]
+	if gameID == "" {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+
+	playerID := r.URL.Query().Get("player")
+	if playerID == "" {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
 
 	conn, err := upgrader.Upgrade(w, r, nil) // if Upgrade fails, it'll write an error message to w
 	if err != nil {
@@ -83,7 +98,12 @@ func gameWS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	c := client{conn: conn, send: make(chan []byte, 1)}
+	c := client{
+		conn:     conn,
+		send:     make(chan []byte, 1),
+		gameID:   gameID,
+		playerID: playerID,
+	}
 
 	go c.write()
 	c.read()
