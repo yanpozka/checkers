@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/nats-io/nats"
 )
 
 var tserver *httptest.Server
@@ -16,7 +17,8 @@ var tserver *httptest.Server
 func TestServerOK(t *testing.T) {
 	tserver = httptest.NewServer(createServer())
 
-	u := url.URL{Scheme: "ws", Host: getHost(tserver.URL), Path: "/game/game-123", RawQuery: "player=player-123"} // ?
+	gameID := "game-123"
+	u := url.URL{Scheme: "ws", Host: getHost(tserver.URL), Path: "/game/" + gameID, RawQuery: "player=player-123"} // ?
 	t.Logf("Connecting to %q", u.String())
 
 	c, res, err := websocket.DefaultDialer.Dial(u.String(), nil)
@@ -26,6 +28,17 @@ func TestServerOK(t *testing.T) {
 	defer c.Close()
 
 	sendAndRecv(t, c)
+
+	nc, err := nats.Connect(getOrDefault("NATS_URL", nats.DefaultURL))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer nc.Close()
+
+	subj, msg := "subject-"+gameID, []byte("only rest check the logs :( so far")
+	nc.Publish(subj, msg)
+
+	time.Sleep(time.Millisecond * 500)
 }
 
 //

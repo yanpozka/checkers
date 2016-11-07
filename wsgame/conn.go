@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/nats-io/nats"
 )
 
 const (
@@ -50,6 +51,26 @@ func (c *client) read() {
 }
 
 //
+func (c *client) listenFromNats() {
+	defer c.conn.Close()
+
+	subj := "subject-" + c.gameID
+
+	ch := make(chan *nats.Msg, 1)
+	sub, err := natsClient.ChanSubscribe(subj, ch)
+	if err != nil {
+		log.Println("Error trying to subscribe:", err)
+		return
+	}
+
+	for m := range ch {
+		log.Printf("Received a message: %s\n", string(m.Data))
+	}
+
+	sub.Unsubscribe()
+}
+
+//
 func (c *client) write() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
@@ -66,20 +87,23 @@ func (c *client) write() {
 
 			if err := c.conn.WriteMessage(websocket.BinaryMessage, message); err != nil {
 				log.Println("Error Write Message", err)
+				return
 			}
 
 		case <-ticker.C:
 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := c.conn.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
 				log.Println("Error Ping Message", err)
+				return
 			}
 		}
 	}
 }
 
-// serveWs handles websocket requests from the peer.
+//
 func gameWS(w http.ResponseWriter, r *http.Request) {
 	parts := strings.Split(r.URL.Path, "/")
+
 	gameID := parts[len(parts)-1]
 	if gameID == "" {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
@@ -92,7 +116,7 @@ func gameWS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	conn, err := upgrader.Upgrade(w, r, nil) // if Upgrade fails, it'll write an error message to w
+	conn, err := upgrader.Upgrade(w, r, nil) // if Upgrade fails, it'll write an error message
 	if err != nil {
 		log.Println("Error trying to Upgrade:", err)
 		return
@@ -106,5 +130,6 @@ func gameWS(w http.ResponseWriter, r *http.Request) {
 	}
 
 	go c.write()
+	go c.listenFromNats()
 	c.read()
 }

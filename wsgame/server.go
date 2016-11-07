@@ -6,17 +6,27 @@ import (
 	"net/http"
 	"os"
 	"runtime/debug"
+
+	"github.com/nats-io/nats"
 )
 
 const (
 	defaultLogFile    = "/tmp/wsserver.log"
 	defaultListenPort = ":8080"
+
+	natsKey = 1
 )
 
 //
-var hub = newHub()
+var (
+	hub = newHub()
+
+	natsClient *nats.Conn
+)
 
 func main() {
+	defer natsClient.Close()
+
 	{
 		f, err := os.OpenFile(getOrDefault("LOG_FILE", defaultLogFile), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 		if err != nil {
@@ -29,8 +39,7 @@ func main() {
 	lp := getOrDefault("LISTEN_PORT", defaultListenPort)
 	log.Println("Start listening in " + lp)
 
-	err := http.ListenAndServe(lp, createServer())
-	if err != nil {
+	if err := http.ListenAndServe(lp, createServer()); err != nil {
 		log.Fatal("Error ListenAndServe: ", err)
 	}
 }
@@ -59,6 +68,13 @@ func middleware(inner http.HandlerFunc) http.Handler {
 }
 
 func createServer() http.Handler {
+	var err error
+	natsClient, err = nats.Connect(getOrDefault("NATS_URL", nats.DefaultURL))
+	if err != nil {
+		panic(err)
+	}
+	natsClient.Flush()
+
 	mux := http.NewServeMux()
 
 	// route
