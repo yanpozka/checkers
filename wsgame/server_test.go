@@ -12,8 +12,11 @@ import (
 	"github.com/nats-io/nats"
 )
 
+const delayms = 60 // 60 FPS ? :P
+
 var tserver *httptest.Server
 
+//
 func TestServerOK(t *testing.T) {
 	tserver = httptest.NewServer(createServer())
 
@@ -38,15 +41,15 @@ func TestServerOK(t *testing.T) {
 	subj, msg := "subject-"+gameID, []byte("only rest check the logs :( so far")
 	nc.Publish(subj, msg)
 
-	time.Sleep(time.Millisecond * 500)
+	time.Sleep(delayms*time.Millisecond + 1)
 }
 
 //
 func sendAndRecv(t *testing.T, ws *websocket.Conn) {
-	if err := ws.SetWriteDeadline(time.Now().Add(time.Millisecond * 500)); err != nil {
+	if err := ws.SetWriteDeadline(time.Now().Add(delayms * time.Millisecond)); err != nil {
 		t.Fatalf("SetWriteDeadline: %v", err)
 	}
-	if err := ws.SetReadDeadline(time.Now().Add(time.Millisecond * 500)); err != nil {
+	if err := ws.SetReadDeadline(time.Now().Add(delayms * time.Millisecond)); err != nil {
 		t.Fatalf("SetReadDeadline: %v", err)
 	}
 

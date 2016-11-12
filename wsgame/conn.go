@@ -23,6 +23,7 @@ var upgrader = websocket.Upgrader{} // default ReadBufferSize, WriteBufferSize 4
 type client struct {
 	conn     *websocket.Conn // The websocket connection.
 	send     chan []byte     // channel of outbound messages.
+	done     chan struct{}
 	gameID   string
 	playerID string
 }
@@ -51,28 +52,42 @@ func (c *client) read() {
 }
 
 //
-func (c *client) listenFromNats() {
-	defer c.conn.Close()
-
+func (c *client) startListenFromNats() error {
 	subj := "subject-" + c.gameID
-
 	ch := make(chan *nats.Msg, 1)
 	sub, err := natsClient.ChanSubscribe(subj, ch)
 	if err != nil {
-		log.Println("Error trying to subscribe:", err)
-		return
+		return err
 	}
 
-	for m := range ch {
-		log.Printf("Received a message: %s\n", string(m.Data))
-	}
+	go func() {
+		defer func() {
+			if err := sub.Unsubscribe(); err != nil {
+				log.Printf("Very unexpected error on Unsubscribing: %v\n", err)
+			}
+			c.conn.Close()
+		}()
 
-	sub.Unsubscribe()
+		for {
+			select {
+			case m, ok := <-ch:
+				if !ok {
+					return
+				}
+				log.Printf("Message from nats: %q\n", string(m.Data))
+			case <-c.done:
+				return
+			}
+		}
+	}()
+
+	return nil
 }
 
 //
 func (c *client) write() {
 	ticker := time.NewTicker(pingPeriod)
+
 	defer func() {
 		ticker.Stop()
 		c.conn.Close()
@@ -86,16 +101,18 @@ func (c *client) write() {
 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 
 			if err := c.conn.WriteMessage(websocket.BinaryMessage, message); err != nil {
-				log.Println("Error Write Message", err)
+				log.Println("Error writing Message", err)
 				return
 			}
 
 		case <-ticker.C:
 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := c.conn.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
-				log.Println("Error Ping Message", err)
+				log.Println("Error writing Ping Message", err)
 				return
 			}
+		case <-c.done:
+			return
 		}
 	}
 }
@@ -125,11 +142,16 @@ func gameWS(w http.ResponseWriter, r *http.Request) {
 	c := client{
 		conn:     conn,
 		send:     make(chan []byte, 1),
+		done:     make(chan struct{}, 1),
 		gameID:   gameID,
 		playerID: playerID,
 	}
 
 	go c.write()
-	go c.listenFromNats()
+	if err := c.startListenFromNats(); err != nil {
+		log.Println("Error trying to subscribe:", err)
+		c.done <- struct{}{}
+		return
+	}
 	c.read()
 }
