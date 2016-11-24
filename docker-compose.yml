@@ -5,6 +5,11 @@ services:
   memcache:
     image: memcached:1.4.33-alpine
     ports: ["11211:11211"]
+    command: memcached -vv -M # >> /home/memcache/memcached.log 2>&1
+
+    # volumes:
+    # - ./config:/etc/conf.d
+    # - /var/log/memcached:/home/memcache
 
   nats:
     image: nats:0.9.4
