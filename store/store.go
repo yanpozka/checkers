@@ -2,6 +2,7 @@ package store
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/bradfitz/gomemcache/memcache"
 )
@@ -34,7 +35,7 @@ func (m *mem) Get(key string) ([]byte, error) {
 		if err == memcache.ErrCacheMiss {
 			return nil, ErrNotFoundItem
 		}
-		return nil, err
+		return nil, fmt.Errorf("memcahe error: %v\n", err)
 	}
 
 	return item.Value, nil
@@ -44,9 +45,9 @@ func (m *mem) Set(key string, val []byte) error {
 
 	err := m.c.Set(&memcache.Item{Key: key, Value: val})
 
-	if err != nil && err == memcache.ErrCacheMiss {
-		return ErrNotFoundItem
+	if err != nil {
+		return fmt.Errorf("memcahe error: %v\n", err)
 	}
 
-	return err
+	return nil
 }

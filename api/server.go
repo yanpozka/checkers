@@ -52,11 +52,11 @@ func createRouter() http.Handler {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 	})
 
-	commonh := alice.New(loggerMW, commonMW)
+	mainChain := alice.New(loggerMW, commonMW)
 
 	// routers:
-	router.Handler(http.MethodGet, "/health", commonh.ThenFunc(health))
-	router.Handler(http.MethodPost, "/game", commonh.ThenFunc(createGame))
+	router.Handler(http.MethodGet, "/health", mainChain.ThenFunc(health))
+	router.Handler(http.MethodPost, "/game", mainChain.ThenFunc(createGame))
 
 	return router
 }

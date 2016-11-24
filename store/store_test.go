@@ -2,14 +2,21 @@ package store
 
 import (
 	"os"
+	"strings"
 	"testing"
 )
 
-func TestGetSet(t *testing.T) {
-	store := NewMemcacheStore(os.Getenv("MEMCACHE_PORT"))
+func TestSetandGet(t *testing.T) {
+
+	hosts := strings.Split(os.Getenv("MEMCACHE_PORT"), "")
+	if len(hosts) == 0 {
+		hosts = append(hosts, "127.0.0.1:11211")
+	}
+
+	store := NewMemcacheStore(hosts...)
 
 	key := "mea_culpa"
-	val := []byte("abcd")
+	val := []byte("abcdefg")
 
 	err := store.Set(key, val)
 	if err != nil {

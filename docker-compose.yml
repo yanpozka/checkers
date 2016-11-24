@@ -1,0 +1,13 @@
+version: '2'
+
+services:
+
+  memcache:
+    image: memcached:1.4.33-alpine
+    ports: ["11211:11211"]
+
+  nats:
+    image: nats:0.9.4
+    ports:
+     - "4222:4222"
+     - "8222:8222"

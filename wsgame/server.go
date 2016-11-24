@@ -37,7 +37,7 @@ func main() {
 	}
 
 	lp := getOrDefault("LISTEN_PORT", defaultListenPort)
-	log.Println("Start listening in " + lp)
+	log.Println("Start listening on " + lp)
 
 	if err := http.ListenAndServe(lp, createServer()); err != nil {
 		log.Fatal("Error ListenAndServe: ", err)
@@ -50,7 +50,7 @@ func middleware(inner http.HandlerFunc) http.Handler {
 
 		defer func() {
 			if val := recover(); val != nil {
-				log.Printf("[-] Recovering: %+v\nrequest: %+v", val, r)
+				log.Printf("[+] Recovering: %+v\nrequest: %+v\n", val, r)
 				debug.PrintStack()
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			}
@@ -71,7 +71,7 @@ func createServer() http.Handler {
 	var err error
 	natsClient, err = nats.Connect(getOrDefault("NATS_URL", nats.DefaultURL))
 	if err != nil {
-		panic(err)
+		log.Fatal("Error on connect to ", err)
 	}
 	natsClient.Flush()
 
