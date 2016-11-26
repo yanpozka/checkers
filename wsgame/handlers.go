@@ -4,6 +4,8 @@ import (
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/yanpozka/checkers/store"
 )
 
 func gameWS(w http.ResponseWriter, r *http.Request) {
@@ -21,12 +23,10 @@ func gameWS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if bg, err := ms.Get(playerID); err == nil {
-		if string(bg) != gameID {
-			log.Printf("PlayerID: %q doesn't have an associated gameID: %q\n", playerID, gameID)
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-			return
-		}
+	if bg, err := ms.Get(playerID); err == store.ErrItemNotFound || string(bg) != gameID {
+		log.Printf("PlayerID: %q doesn't have an associated gameID: %q\n", playerID, gameID)
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
 	}
 
 	conn, err := upgrader.Upgrade(w, r, nil) // if Upgrade fails, it'll write an error message

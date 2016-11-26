@@ -12,6 +12,11 @@ import (
 	"github.com/justinas/alice"
 )
 
+var (
+	Version   string
+	BuildTime string
+)
+
 const (
 	defaultLogFile      = "/tmp/apiserver.log"
 	defaultListenPort   = ":9090"
@@ -23,14 +28,14 @@ func main() {
 	{
 		f, err := os.OpenFile(getOrDefault("LOG_FILE", defaultLogFile), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 		if err != nil {
-			log.Fatalln("error:", err)
+			log.Println(err)
 		}
 
 		log.SetOutput(io.MultiWriter(f, os.Stdout))
 	}
 
 	lp := getOrDefault("LISTEN_PORT", defaultListenPort)
-	log.Println("Starting listening in " + lp)
+	log.Printf("Starting listening in '%v' Version: %q BuildTime: %q", lp, Version, BuildTime)
 
 	err := http.ListenAndServe(lp, createRouter())
 	if err != nil {
