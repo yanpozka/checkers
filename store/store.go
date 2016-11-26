@@ -7,8 +7,8 @@ import (
 	"github.com/bradfitz/gomemcache/memcache"
 )
 
-// ErrNotFoundItem custom error to know if a key doesn't exist
-var ErrNotFoundItem = errors.New("key not found")
+// ErrItemNotFound custom error to know if a key doesn't exist
+var ErrItemNotFound = errors.New("key not found")
 
 // Store basic interface for key/value store
 type Store interface {
@@ -33,7 +33,7 @@ func (m *mem) Get(key string) ([]byte, error) {
 
 	if err != nil {
 		if err == memcache.ErrCacheMiss {
-			return nil, ErrNotFoundItem
+			return nil, ErrItemNotFound
 		}
 		return nil, fmt.Errorf("memcahe error: %v\n", err)
 	}

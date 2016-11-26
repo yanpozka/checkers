@@ -2,8 +2,6 @@ package main
 
 import (
 	"log"
-	"net/http"
-	"strings"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -19,7 +17,6 @@ const (
 
 var upgrader = websocket.Upgrader{} // default ReadBufferSize, WriteBufferSize 4K
 
-//
 type client struct {
 	conn     *websocket.Conn // The websocket connection.
 	send     chan []byte     // channel of outbound messages.
@@ -28,7 +25,6 @@ type client struct {
 	playerID string
 }
 
-//
 func (c *client) read() {
 	defer func() {
 		c.conn.Close()
@@ -51,10 +47,10 @@ func (c *client) read() {
 	}
 }
 
-//
 func (c *client) startListenFromNats() error {
 	subj := "subject-" + c.gameID
 	ch := make(chan *nats.Msg, 1)
+
 	sub, err := natsClient.ChanSubscribe(subj, ch)
 	if err != nil {
 		return err
@@ -84,7 +80,6 @@ func (c *client) startListenFromNats() error {
 	return nil
 }
 
-//
 func (c *client) write() {
 	ticker := time.NewTicker(pingPeriod)
 
@@ -115,43 +110,4 @@ func (c *client) write() {
 			return
 		}
 	}
-}
-
-//
-func gameWS(w http.ResponseWriter, r *http.Request) {
-	parts := strings.Split(r.URL.Path, "/")
-
-	gameID := parts[len(parts)-1]
-	if gameID == "" {
-		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-		return
-	}
-
-	playerID := r.URL.Query().Get("player")
-	if playerID == "" {
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-		return
-	}
-
-	conn, err := upgrader.Upgrade(w, r, nil) // if Upgrade fails, it'll write an error message
-	if err != nil {
-		log.Println("Error trying to Upgrade:", err)
-		return
-	}
-
-	c := client{
-		conn:     conn,
-		send:     make(chan []byte, 1),
-		done:     make(chan struct{}, 1),
-		gameID:   gameID,
-		playerID: playerID,
-	}
-
-	go c.write()
-	if err := c.startListenFromNats(); err != nil {
-		log.Println("Error trying to subscribe:", err)
-		c.done <- struct{}{}
-		return
-	}
-	c.read()
 }

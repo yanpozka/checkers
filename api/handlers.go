@@ -12,7 +12,7 @@ import (
 )
 
 func createGame(w http.ResponseWriter, r *http.Request) {
-	ms, isStoreType := r.Context().Value(storeCtxKey).(store.Store)
+	st, isStoreType := r.Context().Value(storeCtxKey).(store.Store)
 	if !isStoreType {
 		panic("This's very fatal, Context doesn't have storeCtxKey :(")
 	}
@@ -22,10 +22,10 @@ func createGame(w http.ResponseWriter, r *http.Request) {
 
 	gameID := "game-" + uuid.NewV4().String()
 
-	if writeErr(ms.Set(gameID, data), w, "Error creating (Set) new game") {
+	if writeErr(st.Set(gameID, data), w, "Error creating (Set) new game") {
 		return
 	}
-	if writeErr(ms.Set(playerID, []byte(gameID)), w, "Error setting new game with player (author)") {
+	if writeErr(st.Set(playerID, []byte(gameID)), w, "Error setting new game with player (author)") {
 		return
 	}
 
@@ -54,7 +54,7 @@ func invitation(w http.ResponseWriter, r *http.Request) {
 	}
 	gameID := params.ByName("gameID")
 
-	if _, err := st.Get(gameID); err == store.ErrNotFoundItem {
+	if _, err := st.Get(gameID); err == store.ErrItemNotFound {
 		writeErr(err, w, "Game ID not found: "+gameID)
 		return
 	}

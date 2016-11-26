@@ -6,13 +6,16 @@ import (
 	"net/http"
 	"os"
 	"runtime/debug"
+	"strings"
 
 	"github.com/nats-io/nats"
+	"github.com/yanpozka/checkers/store"
 )
 
 const (
-	defaultLogFile    = "/tmp/wsserver.log"
-	defaultListenPort = ":8080"
+	defaultLogFile      = "/tmp/wsserver.log"
+	defaultListenPort   = ":8080"
+	defaultMemcacheHost = "127.0.0.1:11211"
 
 	natsKey = 1
 )
@@ -22,7 +25,10 @@ var (
 	hub = newHub()
 
 	natsClient *nats.Conn
+	ms         store.Store
 )
+
+const storeCtxKey = "store"
 
 func main() {
 	defer natsClient.Close()
@@ -74,6 +80,9 @@ func createServer() http.Handler {
 		log.Fatal("Error on connect to ", err)
 	}
 	natsClient.Flush()
+
+	parts := strings.Split(getOrDefault("MEMCACHE_PORT", defaultMemcacheHost), ",")
+	ms = store.NewMemcacheStore(parts...)
 
 	mux := http.NewServeMux()
 
