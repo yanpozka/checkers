@@ -18,7 +18,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestCreateGame(t *testing.T) {
-	r, err := http.Post(tserver.URL+"/game", "application/json", nil)
+	r, err := http.Post(tserver.URL+"/api/game", "application/json", nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -41,8 +41,20 @@ func TestCreateGame(t *testing.T) {
 	}
 }
 
+func TestInvitation(t *testing.T) {
+	r, err := http.Get(tserver.URL + "/api/invitation/game-id")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer r.Body.Close()
+
+	if r.StatusCode != http.StatusOK {
+		t.Fatalf("Expected: %q we got: %q", http.StatusText(http.StatusOK), http.StatusText(r.StatusCode))
+	}
+}
+
 func TestHealthOK(t *testing.T) {
-	r, err := http.Get(tserver.URL + "/health")
+	r, err := http.Get(tserver.URL + "/api/health")
 	if err != nil {
 		log.Fatal(err)
 	}

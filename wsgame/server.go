@@ -50,7 +50,7 @@ func middleware(inner http.HandlerFunc) http.Handler {
 
 		defer func() {
 			if val := recover(); val != nil {
-				log.Printf("[+] Recovering: %+v\nrequest: %+v\n", val, r)
+				log.Printf("[+] Recovering: %+v\nRequest %s %q Remote IP: %q\n", val, r.Method, r.URL, r.RemoteAddr)
 				debug.PrintStack()
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			}
@@ -78,7 +78,7 @@ func createServer() http.Handler {
 	mux := http.NewServeMux()
 
 	// route
-	mux.Handle("/game/", middleware(gameWS))
+	mux.Handle("/game/", middleware(gameWS)) // /game/:gameID
 
 	go hub.run()
 

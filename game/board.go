@@ -5,12 +5,14 @@ import (
 	m "github.com/yanpozka/checkers/game/messages"
 )
 
+//
 const (
 	StatusWaitingOpponent int8 = iota + 1
 	StatusPlaying
 	StatusEnded
 )
 
+//
 const (
 	PlayerA int8 = 1
 	PlayerB      = 2
@@ -18,6 +20,7 @@ const (
 
 var gameBuilder = flatbuffers.NewBuilder(0)
 
+// InitGame creates an empty game
 func InitGame(playerID []byte) []byte {
 	gameBuilder.Reset()
 
@@ -35,6 +38,7 @@ func InitGame(playerID []byte) []byte {
 	return gameBuilder.Bytes[gameBuilder.Head():]
 }
 
+// MakeGame creates a game with the first board
 func MakeGame(playerID []byte, board [8][8]int8) []byte {
 	gameBuilder.Reset()
 
@@ -80,6 +84,7 @@ func MakeGame(playerID []byte, board [8][8]int8) []byte {
 	return gameBuilder.Bytes[gameBuilder.Head():]
 }
 
+// ReadGame decodes game from buffer
 func ReadGame(buf []byte) ([]byte, []byte, [8][8]int8, int8) {
 	game := m.GetRootAsGame(buf, 0)
 
