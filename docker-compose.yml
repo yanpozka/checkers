@@ -7,10 +7,6 @@ services:
     ports: ["11211:11211"]
     command: memcached -vv -M # >> /home/memcache/memcached.log 2>&1
 
-    # volumes:
-    # - ./config:/etc/conf.d
-    # - /var/log/memcached:/home/memcache
-
   nats:
     image: nats:0.9.4
     ports:
@@ -18,8 +14,15 @@ services:
      - "8222:8222"
 
   api:
+    # sudo docker inspect -f "{{ .HostConfig.Links }}" checkers_api_1
+    #
     build: ./api
+    # image: checkers_api 
     ports: ["9090:9090"]
     depends_on:
      - memcache
-
+    links:
+     - memcache
+    # volumes:
+    # - ./config:/etc/conf.d
+    # - /var/log/memcached:/home/memcache
