@@ -17,7 +17,7 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
-func TestCreateGame(t *testing.T) {
+func TestCreateGameAndInvitation(t *testing.T) {
 	r, err := http.Post(tserver.URL+"/api/game", "application/json", nil)
 	if err != nil {
 		log.Fatal(err)
@@ -34,22 +34,35 @@ func TestCreateGame(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for _, field := range []string{"playerID", "gameURL"} {
+	for _, field := range []string{"playerID", "invitationURL"} {
 		if v, contains := mr[field]; !contains || v == "" {
 			t.Fatal("Not found field:" + field)
 		}
 	}
-}
 
-func TestInvitation(t *testing.T) {
-	r, err := http.Get(tserver.URL + "/api/invitation/game-id")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer r.Body.Close()
+	invitationURL := mr["invitationURL"]
+	{
+		r, err := http.Get(tserver.URL + invitationURL)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer r.Body.Close()
 
-	if r.StatusCode != http.StatusOK {
-		t.Fatalf("Expected: %q we got: %q", http.StatusText(http.StatusOK), http.StatusText(r.StatusCode))
+		if r.StatusCode != http.StatusOK {
+			t.Fatalf("Expected: %q we got: %q", http.StatusText(http.StatusOK), http.StatusText(r.StatusCode))
+		}
+
+		mr := map[string]string{}
+
+		if err := json.NewDecoder(r.Body).Decode(&mr); err != nil {
+			t.Fatal(err)
+		}
+
+		for _, field := range []string{"playerID", "gameURL"} {
+			if v, contains := mr[field]; !contains || v == "" {
+				t.Fatal("Not found field:" + field)
+			}
+		}
 	}
 }
 

@@ -21,7 +21,7 @@ func TestServerOK(t *testing.T) {
 	tserver = httptest.NewServer(createServer())
 
 	gameID := "game-123"
-	u := url.URL{Scheme: "ws", Host: getHost(tserver.URL), Path: "/game/" + gameID, RawQuery: "player=player-123"} // ?
+	u := url.URL{Scheme: "ws", Host: getHost(tserver.URL), Path: "/ws/game/" + gameID, RawQuery: "player=player-123"} // ?
 	t.Logf("Connecting to %q", u.String())
 
 	c, res, err := websocket.DefaultDialer.Dial(u.String(), nil)

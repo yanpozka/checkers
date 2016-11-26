@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/julienschmidt/httprouter"
 	"github.com/satori/go.uuid"
 	"github.com/yanpozka/checkers/game"
 	"github.com/yanpozka/checkers/store"
@@ -29,8 +30,8 @@ func createGame(w http.ResponseWriter, r *http.Request) {
 	}
 
 	mr := map[string]string{
-		"playerID": playerID,
-		"gameURL":  "/api/invitation/" + gameID,
+		"playerID":      playerID,
+		"invitationURL": "/api/invitation/" + gameID,
 	}
 
 	buf, err := json.Marshal(mr)
@@ -42,9 +43,37 @@ func createGame(w http.ResponseWriter, r *http.Request) {
 }
 
 func invitation(w http.ResponseWriter, r *http.Request) {
-	_, isStoreType := r.Context().Value(storeCtxKey).(store.Store)
+	st, isStoreType := r.Context().Value(storeCtxKey).(store.Store)
 	if !isStoreType {
-		panic("This's very fatal, Context doesn't have storeCtxKey :(")
+		panic("Context doesn't have storeCtxKey or isn't store.Store type")
+	}
+
+	params, isParams := r.Context().Value(paramsCtxKey).(httprouter.Params)
+	if !isParams {
+		panic("Context doesn't have storeCtxKey or isn't Params type")
+	}
+	gameID := params.ByName("gameID")
+
+	if _, err := st.Get(gameID); err == store.ErrNotFoundItem {
+		writeErr(err, w, "Game ID not found: "+gameID)
+		return
+	}
+
+	playerID := "player-" + uuid.NewV4().String()
+	if writeErr(ms.Set(playerID, []byte(gameID)), w, "Error setting second player on invitation") {
+		return
+	}
+
+	mr := map[string]string{
+		"playerID": playerID,
+		"gameURL":  "/ws/game/" + gameID,
+	}
+
+	buf, err := json.Marshal(mr)
+
+	if !writeErr(err, w, "Encoding response") {
+		w.WriteHeader(http.StatusOK)
+		w.Write(buf)
 	}
 }
 

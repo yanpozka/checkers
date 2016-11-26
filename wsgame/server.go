@@ -78,7 +78,7 @@ func createServer() http.Handler {
 	mux := http.NewServeMux()
 
 	// route
-	mux.Handle("/game/", middleware(gameWS)) // /game/:gameID
+	mux.Handle("/ws/game/", middleware(gameWS)) // /ws/game/:gameID
 
 	go hub.run()
 
