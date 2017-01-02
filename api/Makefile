@@ -1,6 +1,6 @@
 BINARY=api
 
-VERSION=0.1-$(shell git rev-parse HEAD)
+VERSION=0.1-$(shell git rev-parse --short HEAD)
 BUILD_TIME=$(shell date +%FT%T%z)
 
 LDFLAGS=-ldflags '-extldflags "-lm -lstdc++ -static" -X main.Version=${VERSION} -X main.BuildTime=${BUILD_TIME}'
